@@ -1,0 +1,94 @@
+name: Build and Push PocketBase Images
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "CURRENT_VERSION"
+      - "Dockerfile"
+      - ".github/workflows/build-pocketbase.yml"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  # Base image name (e.g., ghcr.io/drakeapps/pocketbase-docker)
+  IMAGE_BASE: ghcr.io/drakeapps/pocketbase-docker
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # 1. Standard Linux (arm64 & amd64)
+          # Result: ghcr.io/drakeapps/pocketbase-docker/pocketbase
+          - name: "pocketbase"
+            pb_platform: "linux"
+            platforms: "linux/amd64,linux/arm64"
+
+          # 2. Darwin (arm64 & amd64)
+          # Result: ghcr.io/drakeapps/pocketbase-docker/pocketbase-darwin
+          # Note: Corrected 'darmin' to 'darwin' for valid binary download
+          - name: "pocketbase-darwin"
+            pb_platform: "darwin"
+            platforms: "linux/amd64,linux/arm64"
+
+          # 3. Windows (amd64 only)
+          # Result: ghcr.io/drakeapps/pocketbase-docker/pocketbase-windows
+          - name: "pocketbase-windows"
+            pb_platform: "windows"
+            platforms: "linux/amd64"
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Read Current Version
+        id: version
+        run: |
+          # Read file and trim whitespace
+          VER=$(cat CURRENT_VERSION | tr -d '[:space:]')
+          echo "VERSION=$VER" >> $GITHUB_OUTPUT
+          echo "Building Version: $VER"
+
+      # Required for multi-arch builds (arm64/amd64)
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # Constructs the full image name based on the matrix name
+          images: ${{ env.IMAGE_BASE }}/${{ matrix.name }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.VERSION }}
+            type=raw,value=latest
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platforms }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          # Pass arguments to Dockerfile
+          build-args: |
+            PB_VERSION=${{ steps.version.outputs.VERSION }}
+            PLATFORM=${{ matrix.pb_platform }}

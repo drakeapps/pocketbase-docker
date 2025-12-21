@@ -1,15 +1,17 @@
 FROM alpine:latest
 
+# Define these arguments so they can be overridden
 ARG PB_VERSION=0.34.0
-ARG ARCH=arm64
 ARG PLATFORM=linux
+# TARGETARCH is automatically set by Docker Buildx (e.g., amd64, arm64)
+ARG TARGETARCH
 
 RUN apk add --no-cache \
     unzip \
     ca-certificates
 
-# download and unzip PocketBase
-ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_${PLATFORM}_${ARCH}.zip /tmp/pb.zip
+# Download using TARGETARCH to get the correct binary for the architecture being built
+ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_${PLATFORM}_${TARGETARCH}.zip /tmp/pb.zip
 RUN unzip /tmp/pb.zip -d /pb/
 
 # uncomment to copy the local pb_migrations dir into the image
@@ -20,5 +22,4 @@ RUN unzip /tmp/pb.zip -d /pb/
 
 EXPOSE 8080
 
-# start PocketBase
 CMD ["/pb/pocketbase", "serve", "--http=0.0.0.0:8080"]

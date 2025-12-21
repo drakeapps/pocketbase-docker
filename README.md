@@ -15,6 +15,6 @@ Warning: In active development and not complete
 There are 3 versions of the pocketbase container deployed based on the platform:
 
 * `pocketbase` - `linux` in `arm64` and `amd64`
-* `pocketbase-darmin` - `darmin` in `arm64` and `amd64`
+* `pocketbase-darwin` - `darwin` in `arm64` and `amd64`
 * `pocketbase-windows` - `windows` in `amd64`
 
