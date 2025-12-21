@@ -1,24 +1,27 @@
 FROM alpine:latest
 
-# Define these arguments so they can be overridden
-ARG PB_VERSION=0.34.0
+ARG PB_VERSION=0.35.0
 ARG PLATFORM=linux
-# TARGETARCH is automatically set by Docker Buildx (e.g., amd64, arm64)
+# Docker automatically sets these
 ARG TARGETARCH
+ARG TARGETVARIANT
 
 RUN apk add --no-cache \
     unzip \
     ca-certificates
 
-# Download using TARGETARCH to get the correct binary for the architecture being built
-ADD https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_${PLATFORM}_${TARGETARCH}.zip /tmp/pb.zip
+# Logic to map Docker's architecture names to PocketBase's filenames
+# 1. If TARGETARCH is "arm", we assume "armv7" (PocketBase naming)
+# 2. For everything else (amd64, arm64, ppc64le, s390x), we use the TARGETARCH directly.
+RUN set -ex; \
+    if [ "$TARGETARCH" = "arm" ]; then \
+        PB_ARCH="armv7"; \
+    else \
+        PB_ARCH="$TARGETARCH"; \
+    fi && \
+    wget -O /tmp/pb.zip https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_${PLATFORM}_${PB_ARCH}.zip
+
 RUN unzip /tmp/pb.zip -d /pb/
-
-# uncomment to copy the local pb_migrations dir into the image
-# COPY ./pb_migrations /pb/pb_migrations
-
-# uncomment to copy the local pb_hooks dir into the image
-# COPY ./pb_hooks /pb/pb_hooks
 
 EXPOSE 8080
 

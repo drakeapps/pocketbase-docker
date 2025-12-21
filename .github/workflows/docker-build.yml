@@ -1,8 +1,8 @@
-name: Build and Push PocketBase Images
+name: Build PocketBase Multi-Arch
 
 on:
   push:
-    branches: ["main"]
+    branches: ["master"]
     paths:
       - "CURRENT_VERSION"
       - "Dockerfile"
@@ -11,8 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  # Base image name (e.g., ghcr.io/drakeapps/pocketbase-docker)
-  IMAGE_BASE: ghcr.io/drakeapps/pocketbase-docker
+  IMAGE_NAME: ghcr.io/drakeapps/pocketbase-docker/pocketbase
 
 jobs:
   build-and-push:
@@ -21,29 +20,6 @@ jobs:
       contents: read
       packages: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # 1. Standard Linux (arm64 & amd64)
-          # Result: ghcr.io/drakeapps/pocketbase-docker/pocketbase
-          - name: "pocketbase"
-            pb_platform: "linux"
-            platforms: "linux/amd64,linux/arm64"
-
-          # 2. Darwin (arm64 & amd64)
-          # Result: ghcr.io/drakeapps/pocketbase-docker/pocketbase-darwin
-          # Note: Corrected 'darmin' to 'darwin' for valid binary download
-          - name: "pocketbase-darwin"
-            pb_platform: "darwin"
-            platforms: "linux/amd64,linux/arm64"
-
-          # 3. Windows (amd64 only)
-          # Result: ghcr.io/drakeapps/pocketbase-docker/pocketbase-windows
-          - name: "pocketbase-windows"
-            pb_platform: "windows"
-            platforms: "linux/amd64"
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -51,12 +27,11 @@ jobs:
       - name: Read Current Version
         id: version
         run: |
-          # Read file and trim whitespace
           VER=$(cat CURRENT_VERSION | tr -d '[:space:]')
           echo "VERSION=$VER" >> $GITHUB_OUTPUT
-          echo "Building Version: $VER"
+          echo "Detected Version: $VER"
 
-      # Required for multi-arch builds (arm64/amd64)
+      # This step installs the QEMU emulators needed for s390x, ppc64le, and arm
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -74,8 +49,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          # Constructs the full image name based on the matrix name
-          images: ${{ env.IMAGE_BASE }}/${{ matrix.name }}
+          images: ${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=${{ steps.version.outputs.VERSION }}
             type=raw,value=latest
@@ -84,11 +58,11 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          platforms: ${{ matrix.platforms }}
+          # All requested platforms
+          platforms: linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Pass arguments to Dockerfile
           build-args: |
             PB_VERSION=${{ steps.version.outputs.VERSION }}
-            PLATFORM=${{ matrix.pb_platform }}
+            PLATFORM=linux
