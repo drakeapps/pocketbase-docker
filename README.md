@@ -1,6 +1,10 @@
 # Pocketbase Docker
 
-Warning: In active development and not complete
+Simple Docker images for pocketbase.
+
+## Usage
+
+image: `ghcr.io/drakeapps/pocketbase`
 
 ## Build
 
