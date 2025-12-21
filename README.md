@@ -12,6 +12,18 @@ Built for `linux/amd64,linux/arm64,linux/arm/v7,linux/ppc64le,linux/s390x`.
 
 Example `docker-compose` configurations are available in `docker-compose.yml`. This includes a local volume and docker volume options.
 
+### Superuser
+
+To create a superuser account, `exec` into the container and run `/pb/pocketbase superuser create {USER} {PASS}`.
+
+For example:
+
+```shell
+$  docker exec -it repo-pocketbase-1 sh
+# /pb/pocketbase superuser create rusty@rustyshackleford.com hunter2!
+Successfully created new superuser "rusty@rustyshackleford.com"!
+```
+
 ## Build
 
 ### Args
