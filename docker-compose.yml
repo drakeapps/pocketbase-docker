@@ -1,7 +1,7 @@
 services:
   # Example compose setup with locally mounted hooks, migrations, and data
   pocketbase-example:
-    image: ghcr.io/drakeapps/wilsongifts/pocketbase:latest
+    image: ghcr.io/drakeapps/pocketbase/pocketbase:latest
     build:
       context: pocketbase
     ports:
@@ -12,7 +12,7 @@ services:
       - ./pocketbase/data:/pb/pb_data
   # Example compose setup with volume mounted hooks, migrations, and data
   pocketbase-volume-example:
-    image: ghcr.io/drakeapps/wilsongifts/pocketbase:latest
+    image: ghcr.io/drakeapps/pocketbase/pocketbase:latest
     build:
       context: pocketbase
     ports:
