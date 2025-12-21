@@ -1,0 +1,5 @@
+# Pocketbase Docker
+
+## Build
+
+* `ARCH` 
