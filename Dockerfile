@@ -1,6 +1,6 @@
 FROM alpine:latest
 
-ARG PB_VERSION=0.35.0
+ARG PB_VERSION=0.36.9
 ARG PLATFORM=linux
 # Docker automatically sets these
 ARG TARGETARCH
